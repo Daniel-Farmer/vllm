@@ -1316,11 +1316,16 @@ class EngineArgs:
         #############################################################
         # Unsupported Feature Flags on V1.
 
-        if self.load_format == "sharded_state":
-            _raise_or_fallback(
-                feature_name=f"--load_format {self.load_format}",
-                recommend_to_remove=False)
-            return False
+if self.load_format == "sharded_state":
+    if envs.VLLM_USE_V1:
+        logger.warning("Ignoring load_format=sharded_state for V1 engine.")
+        self.load_format = None
+    else:
+        _raise_or_fallback(
+            feature_name=f"--load_format {self.load_format}",
+            recommend_to_remove=False)
+        return False
+
 
 if (self.logits_processor_pattern
         != EngineArgs.logits_processor_pattern):
@@ -1332,27 +1337,45 @@ if (self.logits_processor_pattern
                            recommend_to_remove=False)
         return False
 
+if self.preemption_mode != SchedulerConfig.preemption_mode:
+    if envs.VLLM_USE_V1:
+        logger.warning("Ignoring preemption_mode for V1 engine.")
+        self.preemption_mode = SchedulerConfig.preemption_mode
+    else:
+        _raise_or_fallback(feature_name="--preemption-mode", recommend_to_remove=True)
+        return False
 
-        if self.preemption_mode != SchedulerConfig.preemption_mode:
-            _raise_or_fallback(feature_name="--preemption-mode",
-                               recommend_to_remove=True)
-            return False
 
-        if (self.disable_async_output_proc
-                != EngineArgs.disable_async_output_proc):
-            _raise_or_fallback(feature_name="--disable-async-output-proc",
-                               recommend_to_remove=True)
-            return False
+if (self.disable_async_output_proc
+        != EngineArgs.disable_async_output_proc):
+    if envs.VLLM_USE_V1:
+        logger.warning("Ignoring disable_async_output_proc for V1 engine.")
+        self.disable_async_output_proc = EngineArgs.disable_async_output_proc
+    else:
+        _raise_or_fallback(feature_name="--disable-async-output-proc",
+                           recommend_to_remove=True)
+        return False
 
-        if self.num_scheduler_steps != SchedulerConfig.num_scheduler_steps:
-            _raise_or_fallback(feature_name="--num-scheduler-steps",
-                               recommend_to_remove=True)
-            return False
 
-        if self.scheduler_delay_factor != SchedulerConfig.delay_factor:
-            _raise_or_fallback(feature_name="--scheduler-delay-factor",
-                               recommend_to_remove=True)
-            return False
+if self.num_scheduler_steps != SchedulerConfig.num_scheduler_steps:
+    if envs.VLLM_USE_V1:
+        logger.warning("Ignoring num_scheduler_steps for V1 engine.")
+        self.num_scheduler_steps = SchedulerConfig.num_scheduler_steps
+    else:
+        _raise_or_fallback(feature_name="--num-scheduler-steps",
+                           recommend_to_remove=True)
+        return False
+
+
+if self.scheduler_delay_factor != SchedulerConfig.scheduler_delay_factor:
+    if envs.VLLM_USE_V1:
+        logger.warning("Ignoring scheduler_delay_factor for V1 engine.")
+        self.scheduler_delay_factor = SchedulerConfig.scheduler_delay_factor
+    else:
+        _raise_or_fallback(feature_name="--scheduler-delay-factor",
+                           recommend_to_remove=True)
+        return False
+
 
         # Need at least Ampere for now (FA support required).
         # Skip this check if we are running on a non-GPU platform,
