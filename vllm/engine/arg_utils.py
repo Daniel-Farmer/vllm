@@ -1322,11 +1322,16 @@ class EngineArgs:
                 recommend_to_remove=False)
             return False
 
-        if (self.logits_processor_pattern
-                != EngineArgs.logits_processor_pattern):
-            _raise_or_fallback(feature_name="--logits-processor-pattern",
-                               recommend_to_remove=False)
-            return False
+if (self.logits_processor_pattern
+        != EngineArgs.logits_processor_pattern):
+    if envs.VLLM_USE_V1:
+        logger.warning("Ignoring logits_processor_pattern for V1 engine.")
+        self.logits_processor_pattern = None
+    else:
+        _raise_or_fallback(feature_name="--logits-processor-pattern",
+                           recommend_to_remove=False)
+        return False
+
 
         if self.preemption_mode != SchedulerConfig.preemption_mode:
             _raise_or_fallback(feature_name="--preemption-mode",
